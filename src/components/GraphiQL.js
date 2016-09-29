@@ -20,6 +20,7 @@ import { ToolbarButton } from './ToolbarButton';
 import { QueryEditor } from './QueryEditor';
 import { VariableEditor } from './VariableEditor';
 import { ResultViewer } from './ResultViewer';
+import { SqlViewer } from './SqlViewer';
 import { DocExplorer } from './DocExplorer';
 import CodeMirrorSizer from '../utility/CodeMirrorSizer';
 import getQueryFacts from '../utility/getQueryFacts';
@@ -164,6 +165,7 @@ export class GraphiQL extends React.Component {
       query,
       variables,
       operationName,
+      sql: '',
       response: props.response,
       editorFlex: Number(this._storageGet('editorFlex')) || 1,
       variableEditorOpen: Boolean(variables),
@@ -347,6 +349,7 @@ export class GraphiQL extends React.Component {
                 ref={c => { this.resultComponent = c; }}
                 value={this.state.response}
               />
+              <SqlViewer value={this.state.sql} />
               {footer}
             </div>
           </div>
@@ -562,6 +565,7 @@ export class GraphiQL extends React.Component {
             this.setState({
               isWaitingForResponse: false,
               response: JSON.stringify(result, null, 2),
+              sql: result._headers['x-sql-preview']
             });
           }
         }
@@ -847,7 +851,7 @@ export class GraphiQL extends React.Component {
 GraphiQL.Logo = function GraphiQLLogo(props) {
   return (
     <div className="title">
-      {props.children || <span>{'Graph'}<em>{'i'}</em>{'QL'}</span>}
+      {props.children || <span>{'Graph'}<em>{'si'}</em>{'QL'}</span>}
     </div>
   );
 };

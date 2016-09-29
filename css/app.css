@@ -190,9 +190,13 @@
 }
 
 .graphiql-container .result-window {
-  -webkit-flex: 1;
-          flex: 1;
   position: relative;
+  height: 60%;
+}
+
+.graphiql-container .sql-window {
+  position: relative;
+  height: 40%;
 }
 
 .graphiql-container .footer {

@@ -1,18 +1,14 @@
 {
-  "name": "graphiql",
-  "version": "0.7.8",
-  "description": "An graphical interactive in-browser GraphQL IDE.",
-  "contributors": [
-    "Hyohyeon Jeong <asiandrummer@fb.com>",
-    "Lee Byron <lee@leebyron.com> (http://leebyron.com/)"
-  ],
-  "homepage": "https://github.com/graphql/graphiql",
+  "name": "graphsiql",
+  "version": "0.0.0",
+  "description": "An graphical interactive in-browser GraphQL IDE with an extra window for showing your SQL query.",
+  "homepage": "https://github.com/acarl005/graphsiql",
   "bugs": {
-    "url": "https://github.com/graphql/graphiql/issues"
+    "url": "https://github.com/acarl005/graphsiql/issues"
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/graphql/graphiql.git"
+    "url": "http://github.com/acarl005/graphsiql.git"
   },
   "license": "SEE LICENSE IN LICENSE",
   "main": "dist/index.js",
@@ -20,9 +16,7 @@
     "dist",
     "graphiql.js",
     "graphiql.min.js",
-    "graphiql.css",
-    "README.md",
-    "LICENSE"
+    "graphiql.css"
   ],
   "browserify-shim": {
     "react": "global:React",
@@ -37,8 +31,7 @@
     "lint": "eslint src",
     "check": "flow check",
     "build": ". ./resources/build.sh",
-    "preversion": ". ./resources/checkgit.sh && npm test",
-    "prepublish": ". ./resources/prepublish.sh"
+    "prepublish": "npm run build"
   },
   "dependencies": {
     "codemirror": "^5.15.2",
