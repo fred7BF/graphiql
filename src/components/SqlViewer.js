@@ -41,10 +41,6 @@ export class SqlViewer extends React.Component {
       theme: 'default',
       mode: 'text/x-sql',
       keyMap: 'sublime',
-      foldGutter: {
-        minFoldSize: 4
-      },
-      gutters: [ 'CodeMirror-foldgutter' ],
       extraKeys: {
         // Editor improvements
         'Ctrl-Left': 'goSubwordLeft',
