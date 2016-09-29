@@ -1,6 +1,6 @@
 {
   "name": "graphsiql",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "An graphical interactive in-browser GraphQL IDE with an extra window for showing your SQL query.",
   "homepage": "https://github.com/acarl005/graphsiql",
   "bugs": {
