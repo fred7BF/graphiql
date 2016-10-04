@@ -45,3 +45,5 @@ app.use(koaStatic(path.join(__dirname, '../node_modules/graphsiql')))
 
 app.listen(3000, () => console.log('server listening at http://localhost:3000/graphql'))
 ```
+
+How do I get the SQL to appear in the bottom-right-hand window? This window looks for a specific **header** in the HTTP response. Just set `x-sql-preview` to the SQL you want to display. Make sure to URI encode characters that cannot be in a header, such as newlines.
