@@ -32,10 +32,9 @@ export class SqlViewer extends React.Component {
     require('codemirror/addon/fold/foldgutter');
     require('codemirror/addon/fold/brace-fold');
     require('codemirror/keymap/sublime');
-    require('codemirror/mode/sql/sql')
+    require('codemirror/mode/sql/sql');
 
     window.code = this.viewer = CodeMirror(ReactDOM.findDOMNode(this), {
-      lineWrapping: true,
       value: this.props.value || '',
       readOnly: true,
       theme: 'default',
