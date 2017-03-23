@@ -1,9 +1,9 @@
 /**
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the license found in the
- *  LICENSE-examples file in the root directory of this source tree.
+ *  LICENSE file in the root directory of this source tree.
  */
 
 import React, { PropTypes } from 'react';
@@ -17,6 +17,9 @@ import {
 
 import { ExecuteButton } from './ExecuteButton';
 import { ToolbarButton } from './ToolbarButton';
+import { ToolbarGroup } from './ToolbarGroup';
+import { ToolbarMenu, ToolbarMenuItem } from './ToolbarMenu';
+import { ToolbarSelect, ToolbarSelectOption } from './ToolbarSelect';
 import { QueryEditor } from './QueryEditor';
 import { VariableEditor } from './VariableEditor';
 import { ResultViewer } from './ResultViewer';
@@ -35,73 +38,10 @@ import {
 } from '../utility/introspectionQueries';
 
 /**
- * GraphiQL
+ * The top-level React component for GraphiQL, intended to encompass the entire
+ * browser viewport.
  *
- * This React component is responsible for rendering the GraphiQL editor.
- *
- * Props:
- *
- *   - fetcher: a function which accepts GraphQL-HTTP parameters and returns
- *     a Promise or Observable which resolves to the GraphQL parsed
- *     JSON response.
- *
- *   - schema: a GraphQLSchema instance or `null` if one is not to be used.
- *     If `undefined` is provided, GraphiQL will send an introspection query
- *     using the fetcher to produce a schema.
- *
- *   - query: an optional GraphQL string to use as the initial displayed query,
- *     if `undefined` is provided, the stored query or defaultQuery will
- *     be used.
- *
- *   - variables: an optional GraphQL string to use as the initial displayed
- *     query variables, if `undefined` is provided, the stored variables will
- *     be used.
- *
- *   - operationName: an optional name of which GraphQL operation should be
- *     executed.
- *
- *   - response: an optional JSON string to use as the initial displayed
- *     response. If not provided, no response will be initialy shown. You might
- *     provide this if illustrating the result of the initial query.
- *
- *   - storage: an instance of [Storage][] GraphiQL will use to persist state.
- *     Only `getItem` and `setItem` are called. Default: window.localStorage
- *
- *   - defaultQuery: an optional GraphQL string to use when no query is provided
- *     and no stored query exists from a previous session. If `undefined` is
- *     provided, GraphiQL will use its own default query.
- *
- *   - onEditQuery: an optional function which will be called when the Query
- *     editor changes. The argument to the function will be the query string.
- *
- *   - onEditVariables: an optional function which will be called when the Query
- *     varible editor changes. The argument to the function will be the
- *     variables string.
- *
- *   - onEditOperationName: an optional function which will be called when the
- *     operation name to be executed changes.
- *
- *   - onToggleDocs: an optional function which will be called when the
- *     docs will be toggled. The argument to the function will be a boolean
- *     whether the docs are now open or closed.
- *
- *   - getDefaultFieldNames: an optional function used to provide default fields
- *     to non-leaf fields which invalidly lack a selection set.
- *     Accepts a GraphQLType instance and returns an array of field names.
- *     If not provided, a default behavior will be used.
- *
- * Children:
- *
- *   - <GraphiQL.Logo> Replace the GraphiQL logo with your own.
- *
- *   - <GraphiQL.Toolbar> Add a custom toolbar above GraphiQL.
- *
- *   - <GraphiQL.ToolbarButton> Add a button to the toolbar above GraphiQL.
- *
- *   - <GraphiQL.Footer> Add a custom footer below GraphiQL Results.
- *
- *
- * [Storage]: https://developer.mozilla.org/en-US/docs/Web/API/Storage
+ * @see https://github.com/graphql/graphiql#usage
  */
 export class GraphiQL extends React.Component {
 
@@ -114,14 +54,16 @@ export class GraphiQL extends React.Component {
     response: PropTypes.string,
     storage: PropTypes.shape({
       getItem: PropTypes.func,
-      setItem: PropTypes.func
+      setItem: PropTypes.func,
+      removeItem: PropTypes.func
     }),
     defaultQuery: PropTypes.string,
     onEditQuery: PropTypes.func,
     onEditVariables: PropTypes.func,
     onEditOperationName: PropTypes.func,
     onToggleDocs: PropTypes.func,
-    getDefaultFieldNames: PropTypes.func
+    getDefaultFieldNames: PropTypes.func,
+    editorTheme: PropTypes.string,
   }
 
   constructor(props) {
@@ -171,7 +113,8 @@ export class GraphiQL extends React.Component {
       variableEditorOpen: Boolean(variables),
       variableEditorHeight:
         Number(this._storageGet('variableEditorHeight')) || 200,
-      docExplorerOpen: false,
+      docExplorerOpen:
+        (this._storageGet('docExplorerOpen') === 'true') || false,
       docExplorerWidth: Number(this._storageGet('docExplorerWidth')) || 350,
       isWaitingForResponse: false,
       subscription: null,
@@ -190,12 +133,16 @@ export class GraphiQL extends React.Component {
   }
 
   componentDidMount() {
-    // Ensure a form of a schema exists (including `null`) and
-    // if not, fetch one using an introspection query.
-    this._ensureOfSchema();
+    // Only fetch schema via introspection if a schema has not been
+    // provided, including if `null` was provided.
+    if (this.state.schema === undefined) {
+      this._fetchSchema();
+    }
 
     // Utility for keeping CodeMirror correctly sized.
     this.codeMirrorSizer = new CodeMirrorSizer();
+
+    global.g = this;
   }
 
   componentWillReceiveProps(nextProps) {
@@ -223,7 +170,25 @@ export class GraphiQL extends React.Component {
     if (nextSchema !== this.state.schema ||
         nextQuery !== this.state.query ||
         nextOperationName !== this.state.operationName) {
-      this._updateQueryFacts(nextQuery);
+      const updatedQueryAttributes = this._updateQueryFacts(
+        nextQuery,
+        nextOperationName,
+        this.state.operations,
+        nextSchema,
+      );
+
+      if (updatedQueryAttributes !== undefined) {
+        nextOperationName = updatedQueryAttributes.operationName;
+
+        this.setState(updatedQueryAttributes);
+      }
+    }
+
+    // If schema is not supplied via props and the fetcher changed, then
+    // remove the schema so fetchSchema() will be called with the new fetcher.
+    if (nextProps.schema === undefined &&
+        nextProps.fetcher !== this.props.fetcher) {
+      nextSchema = undefined;
     }
 
     this.setState({
@@ -232,6 +197,11 @@ export class GraphiQL extends React.Component {
       variables: nextVariables,
       operationName: nextOperationName,
       response: nextResponse,
+    }, () => {
+      if (this.state.schema === undefined) {
+        this.docExplorerComponent.reset();
+        this._fetchSchema();
+      }
     });
   }
 
@@ -249,21 +219,30 @@ export class GraphiQL extends React.Component {
   // that when the component is remounted, it will use the last used values.
   componentWillUnmount() {
     this._storageSet('query', this.state.query);
-    this._storageSet('variables', this.state.variables || '');
+    this._storageSet('variables', this.state.variables);
     this._storageSet('operationName', this.state.operationName);
     this._storageSet('editorFlex', this.state.editorFlex);
     this._storageSet('variableEditorHeight', this.state.variableEditorHeight);
     this._storageSet('docExplorerWidth', this.state.docExplorerWidth);
+    this._storageSet('docExplorerOpen', this.state.docExplorerOpen);
   }
 
   render() {
     const children = React.Children.toArray(this.props.children);
 
-    const logo = find(children, child => child.type === GraphiQL.Logo) ||
+    const logo =
+      find(children, child => child.type === GraphiQL.Logo) ||
       <GraphiQL.Logo />;
 
-    const toolbar = find(children, child => child.type === GraphiQL.Toolbar) ||
-      <GraphiQL.Toolbar />;
+    const toolbar =
+      find(children, child => child.type === GraphiQL.Toolbar) ||
+      <GraphiQL.Toolbar>
+        <ToolbarButton
+          onClick={this.handlePrettifyQuery}
+          title="Prettify Query"
+          label="Prettify"
+        />
+      </GraphiQL.Toolbar>;
 
     const footer = find(children, child => child.type === GraphiQL.Footer);
 
@@ -276,6 +255,8 @@ export class GraphiQL extends React.Component {
       display: this.state.docExplorerOpen ? 'block' : 'none',
       width: this.state.docExplorerWidth,
     };
+    const docExplorerWrapClasses = 'docExplorerWrap' +
+      (this.state.docExplorerWidth < 200 ? ' doc-explorer-narrow' : '');
 
     const variableOpen = this.state.variableEditorOpen;
     const variableStyle = {
@@ -294,14 +275,10 @@ export class GraphiQL extends React.Component {
                 onStop={this.handleStopQuery}
                 operations={this.state.operations}
               />
-              <GraphiQL.ToolbarButton
-                onClick={this.handlePrettifyQuery}
-                title="Prettify Query"
-                label="Prettify"
-              />
               {toolbar}
             </div>
-            {!this.state.docExplorerOpen &&
+            {
+              !this.state.docExplorerOpen &&
               <button
                 className="docExplorerShow"
                 onClick={this.handleToggleDocs}>
@@ -320,7 +297,9 @@ export class GraphiQL extends React.Component {
                 value={this.state.query}
                 onEdit={this.handleEditQuery}
                 onHintInformationRender={this.handleHintInformationRender}
+                onClickReference={this.handleClickReference}
                 onRunQuery={this.handleEditorRunQuery}
+                editorTheme={this.props.editorTheme}
               />
               <div className="variable-editor" style={variableStyle}>
                 <div
@@ -336,11 +315,13 @@ export class GraphiQL extends React.Component {
                   onEdit={this.handleEditVariables}
                   onHintInformationRender={this.handleHintInformationRender}
                   onRunQuery={this.handleEditorRunQuery}
+                  editorTheme={this.props.editorTheme}
                 />
               </div>
             </div>
             <div className="resultWrap">
-              {this.state.isWaitingForResponse &&
+              {
+                this.state.isWaitingForResponse &&
                 <div className="spinner-container">
                   <div className="spinner" />
                 </div>
@@ -348,13 +329,14 @@ export class GraphiQL extends React.Component {
               <ResultViewer
                 ref={c => { this.resultComponent = c; }}
                 value={this.state.response}
+                editorTheme={this.props.editorTheme}
               />
               <SqlViewer value={this.state.sql} />
               {footer}
             </div>
           </div>
         </div>
-        <div className="docExplorerWrap" style={docWrapStyle}>
+        <div className={docExplorerWrapClasses} style={docWrapStyle}>
           <div
             className="docExplorerResizer"
             onMouseDown={this.handleDocsResizeStart}
@@ -372,6 +354,35 @@ export class GraphiQL extends React.Component {
   }
 
   /**
+   * Get the query editor CodeMirror instance.
+   *
+   * @public
+   */
+  getQueryEditor() {
+    return this.queryEditorComponent.getCodeMirror();
+  }
+
+  /**
+   * Get the variable editor CodeMirror instance.
+   *
+   * @public
+   */
+  getVariableEditor() {
+    return this.variableEditorComponent.getCodeMirror();
+  }
+
+  /**
+   * Refresh all CodeMirror instances.
+   *
+   * @public
+   */
+  refresh() {
+    this.queryEditorComponent.getCodeMirror().refresh();
+    this.variableEditorComponent.getCodeMirror().refresh();
+    this.resultComponent.getCodeMirror().refresh();
+  }
+
+  /**
    * Inspect the query, automatically filling in selection sets for non-leaf
    * fields which do not yet have them.
    *
@@ -384,7 +395,7 @@ export class GraphiQL extends React.Component {
       this.props.getDefaultFieldNames
     );
     if (insertions && insertions.length > 0) {
-      const editor = this.queryEditorComponent.getCodeMirror();
+      const editor = this.getQueryEditor();
       editor.operation(() => {
         const cursor = editor.getCursor();
         const cursorIndex = editor.indexFromPos(cursor);
@@ -415,15 +426,10 @@ export class GraphiQL extends React.Component {
 
   // Private methods
 
-  _ensureOfSchema() {
-    // Only perform introspection if a schema is not provided (undefined)
-    if (this.state.schema !== undefined) {
-      return;
-    }
-
+  _fetchSchema() {
     const fetcher = this.props.fetcher;
 
-    const fetch = fetcher({ query: introspectionQuery });
+    const fetch = observableToPromise(fetcher({ query: introspectionQuery }));
     if (!isPromise(fetch)) {
       this.setState({
         response: 'Fetcher did not return a Promise for introspection.'
@@ -438,7 +444,9 @@ export class GraphiQL extends React.Component {
 
       // Try the stock introspection query first, falling back on the
       // sans-subscriptions query for services which do not yet support it.
-      const fetch2 = fetcher({ query: introspectionQuerySansSubscriptions });
+      const fetch2 = observableToPromise(fetcher({
+        query: introspectionQuerySansSubscriptions
+      }));
       if (!isPromise(fetch)) {
         throw new Error('Fetcher did not return a Promise for introspection.');
       }
@@ -459,20 +467,39 @@ export class GraphiQL extends React.Component {
         const responseString = typeof result === 'string' ?
           result :
           JSON.stringify(result, null, 2);
-        this.setState({ response: responseString });
+        this.setState({
+          // Set schema to `null` to explicitly indicate that no schema exists.
+          schema: null,
+          response: responseString
+        });
       }
     }).catch(error => {
-      this.setState({ response: error && String(error.stack || error) });
+      this.setState({
+        schema: null,
+        response: error && String(error.stack || error)
+      });
     });
   }
 
   _storageGet(name) {
-    return this._storage && this._storage.getItem('graphiql:' + name);
+    if (this._storage) {
+      const value = this._storage.getItem('graphiql:' + name);
+      // Clean up any inadvertently saved null/undefined values.
+      if (value === 'null' || value === 'undefined') {
+        this._storage.removeItem('graphiql:' + name);
+      } else {
+        return value;
+      }
+    }
   }
 
   _storageSet(name, value) {
     if (this._storage) {
-      this._storage.setItem('graphiql:' + name, value);
+      if (value) {
+        this._storage.setItem('graphiql:' + name, value);
+      } else {
+        this._storage.removeItem('graphiql:' + name);
+      }
     }
   }
 
@@ -533,6 +560,12 @@ export class GraphiQL extends React.Component {
     }
   }
 
+  handleClickReference = reference => {
+    this.setState({ docExplorerOpen: true }, () => {
+      this.docExplorerComponent.showDocForReference(reference);
+    });
+  }
+
   handleRunQuery = selectedOperationName => {
     this._editorQueryID++;
     const queryID = this._editorQueryID;
@@ -555,6 +588,12 @@ export class GraphiQL extends React.Component {
     }
 
     try {
+      this.setState({
+        isWaitingForResponse: true,
+        response: null,
+        operationName,
+      });
+
       // _fetchQuery may return a subscription.
       const subscription = this._fetchQuery(
         editedQuery,
@@ -571,12 +610,7 @@ export class GraphiQL extends React.Component {
         }
       );
 
-      this.setState({
-        isWaitingForResponse: true,
-        response: null,
-        subscription,
-        operationName,
-      });
+      this.setState({ subscription });
     } catch (error) {
       this.setState({
         isWaitingForResponse: false,
@@ -594,7 +628,6 @@ export class GraphiQL extends React.Component {
     if (subscription) {
       subscription.unsubscribe();
     }
-    return;
   }
 
   _runQueryAtCursor() {
@@ -606,7 +639,7 @@ export class GraphiQL extends React.Component {
     let operationName;
     const operations = this.state.operations;
     if (operations) {
-      const editor = this.queryEditorComponent.getCodeMirror();
+      const editor = this.getQueryEditor();
       if (editor.hasFocus()) {
         const cursor = editor.getCursor();
         const cursorIndex = editor.indexFromPos(cursor);
@@ -627,43 +660,48 @@ export class GraphiQL extends React.Component {
   }
 
   handlePrettifyQuery = () => {
-    const query = print(parse(this.state.query));
-    const editor = this.queryEditorComponent.getCodeMirror();
-    editor.setValue(query);
+    const editor = this.getQueryEditor();
+    editor.setValue(print(parse(editor.getValue())));
   }
 
-  handleEditQuery = value => {
-    if (this.state.schema) {
-      this._updateQueryFacts(value);
-    }
-    this.setState({ query: value });
+  handleEditQuery = debounce(100, value => {
+    const queryFacts = this._updateQueryFacts(
+      value,
+      this.state.operationName,
+      this.state.operations,
+      this.state.schema,
+    );
+    this.setState({
+      query: value,
+      ...queryFacts
+    });
     if (this.props.onEditQuery) {
       return this.props.onEditQuery(value);
     }
-  }
+  })
 
-  _updateQueryFacts = debounce(150, query => {
-    const queryFacts = getQueryFacts(this.state.schema, query);
+  _updateQueryFacts = (query, operationName, prevOperations, schema) => {
+    const queryFacts = getQueryFacts(schema, query);
     if (queryFacts) {
       // Update operation name should any query names change.
-      const operationName = getSelectedOperationName(
-        this.state.operations,
-        this.state.operationName,
+      const updatedOperationName = getSelectedOperationName(
+        prevOperations,
+        operationName,
         queryFacts.operations
       );
 
       // Report changing of operationName if it changed.
       const onEditOperationName = this.props.onEditOperationName;
-      if (onEditOperationName && operationName !== this.state.operationName) {
-        onEditOperationName(operationName);
+      if (onEditOperationName && operationName !== updatedOperationName) {
+        onEditOperationName(updatedOperationName);
       }
 
-      this.setState({
-        operationName,
+      return {
+        operationName: updatedOperationName,
         ...queryFacts
-      });
+      };
     }
-  })
+  }
 
   handleEditVariables = value => {
     this.setState({ variables: value });
@@ -866,7 +904,19 @@ GraphiQL.Toolbar = function GraphiQLToolbar(props) {
 };
 
 // Add a button to the Toolbar.
-GraphiQL.ToolbarButton = ToolbarButton;
+GraphiQL.Button = ToolbarButton;
+GraphiQL.ToolbarButton = ToolbarButton; // Don't break existing API.
+
+// Add a group of buttons to the Toolbar
+GraphiQL.Group = ToolbarGroup;
+
+// Add a menu of items to the Toolbar.
+GraphiQL.Menu = ToolbarMenu;
+GraphiQL.MenuItem = ToolbarMenuItem;
+
+// Add a select-option input to the Toolbar.
+GraphiQL.Select = ToolbarSelect;
+GraphiQL.SelectOption = ToolbarSelectOption;
 
 // Configure the UI by providing this Component as a child of GraphiQL.
 GraphiQL.Footer = function GraphiQLFooter(props) {
@@ -880,23 +930,55 @@ GraphiQL.Footer = function GraphiQLFooter(props) {
 const defaultQuery =
 `# Welcome to GraphiQL
 #
-# GraphiQL is an in-browser IDE for writing, validating, and
+# GraphiQL is an in-browser tool for writing, validating, and
 # testing GraphQL queries.
 #
-# Type queries into this side of the screen, and you will
-# see intelligent typeaheads aware of the current GraphQL type schema and
-# live syntax and validation errors highlighted within the text.
+# Type queries into this side of the screen, and you will see intelligent
+# typeaheads aware of the current GraphQL type schema and live syntax and
+# validation errors highlighted within the text.
 #
-# To bring up the auto-complete at any point, just press Ctrl-Space.
+# GraphQL queries typically start with a "{" character. Lines that starts
+# with a # are ignored.
 #
-# Press the run button above, or Cmd-Enter to execute the query, and the result
-# will appear in the pane to the right.
+# An example GraphQL query might look like:
+#
+#     {
+#       field(arg: "value") {
+#         subField
+#       }
+#     }
+#
+# Keyboard shortcuts:
+#
+#       Run Query:  Ctrl-Enter (or press the play button above)
+#
+#   Auto Complete:  Ctrl-Space (or just start typing)
+#
 
 `;
 
 // Duck-type promise detection.
 function isPromise(value) {
   return typeof value === 'object' && typeof value.then === 'function';
+}
+
+// Duck-type Observable.take(1).toPromise()
+function observableToPromise(observable) {
+  if ( !isObservable(observable) ) {
+    return observable;
+  }
+  return new Promise((resolve, reject) => {
+    const subscription = observable.subscribe(
+      v => {
+        resolve(v);
+        subscription.unsubscribe();
+      },
+      reject,
+      () => {
+        reject(new Error('no value resolved'));
+      }
+    );
+  });
 }
 
 // Duck-type observable detection.

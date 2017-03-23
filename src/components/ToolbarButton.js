@@ -1,9 +1,9 @@
 /**
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the license found in the
- *  LICENSE-examples file in the root directory of this source tree.
+ *  LICENSE file in the root directory of this source tree.
  */
 
 import React, { PropTypes } from 'react';
@@ -31,6 +31,7 @@ export class ToolbarButton extends React.Component {
     return (
       <a
         className={'toolbar-button' + (error ? ' error' : '')}
+        onMouseDown={preventDefault}
         onClick={this.handleClick}
         title={error ? error.message : this.props.title}>
         {this.props.label}
@@ -47,4 +48,8 @@ export class ToolbarButton extends React.Component {
       this.setState({ error });
     }
   };
+}
+
+function preventDefault(e) {
+  e.preventDefault();
 }

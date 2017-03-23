@@ -1,13 +1,12 @@
 /**
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the license found in the
- *  LICENSE-examples file in the root directory of this source tree.
+ *  LICENSE file in the root directory of this source tree.
  */
 
 import React, { PropTypes } from 'react';
-import ReactDOM from 'react-dom';
 
 import onHasCompletion from '../utility/onHasCompletion';
 
@@ -31,6 +30,7 @@ export class VariableEditor extends React.Component {
     onEdit: PropTypes.func,
     onHintInformationRender: PropTypes.func,
     onRunQuery: PropTypes.func,
+    editorTheme: PropTypes.string,
   }
 
   constructor(props) {
@@ -57,12 +57,12 @@ export class VariableEditor extends React.Component {
     require('codemirror-graphql/variables/lint');
     require('codemirror-graphql/variables/mode');
 
-    this.editor = CodeMirror(ReactDOM.findDOMNode(this), {
+    this.editor = CodeMirror(this._node, {
       value: this.props.value || '',
       lineNumbers: true,
       tabSize: 2,
       mode: 'graphql-variables',
-      theme: 'graphiql',
+      theme: this.props.editorTheme || 'graphiql',
       keyMap: 'sublime',
       autoCloseBrackets: true,
       matchBrackets: true,
@@ -136,7 +136,12 @@ export class VariableEditor extends React.Component {
   }
 
   render() {
-    return <div className="codemirrorWrap" />;
+    return (
+      <div
+        className="codemirrorWrap"
+        ref={node => { this._node = node; }}
+      />
+    );
   }
 
   /**
@@ -145,6 +150,13 @@ export class VariableEditor extends React.Component {
    */
   getCodeMirror() {
     return this.editor;
+  }
+
+  /**
+   * Public API for retrieving the DOM client height for this component.
+   */
+  getClientHeight() {
+    return this._node && this._node.clientHeight;
   }
 
   _onKeyUp = (cm, event) => {

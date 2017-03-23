@@ -1,9 +1,9 @@
 /**
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the license found in the
- *  LICENSE-examples file in the root directory of this source tree.
+ *  LICENSE file in the root directory of this source tree.
  */
 
 import React, { PropTypes } from 'react';
@@ -69,18 +69,19 @@ export class ExecuteButton extends React.Component {
       onMouseDown = this._onOptionsOpen;
     }
 
+    const pathJSX = this.props.isRunning ?
+      <path d="M 10 10 L 23 10 L 23 23 L 10 23 z" /> :
+      <path d="M 11 9 L 24 16 L 11 23 z" />;
+
     return (
       <div className="execute-button-wrap">
         <button
+          type="button"
           className="execute-button"
           onMouseDown={onMouseDown}
           onClick={onClick}
           title="Execute Query (Ctrl-Enter)">
-          <svg width="34" height="34">
-            {this.props.isRunning ?
-              <path d="M 10 10 L 23 10 L 23 23 L 10 23 z" /> :
-              <path d="M 11 9 L 24 16 L 11 23 z" />}
-          </svg>
+          <svg width="34" height="34">{pathJSX}</svg>
         </button>
         {options}
       </div>

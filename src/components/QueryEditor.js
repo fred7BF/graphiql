@@ -1,16 +1,18 @@
 /**
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the license found in the
- *  LICENSE-examples file in the root directory of this source tree.
+ *  LICENSE file in the root directory of this source tree.
  */
 
 import React, { PropTypes } from 'react';
-import ReactDOM from 'react-dom';
 import { GraphQLSchema } from 'graphql';
+import marked from 'marked';
 
 import onHasCompletion from '../utility/onHasCompletion';
+
+const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
 
 
 /**
@@ -31,7 +33,9 @@ export class QueryEditor extends React.Component {
     value: PropTypes.string,
     onEdit: PropTypes.func,
     onHintInformationRender: PropTypes.func,
+    onClickReference: PropTypes.func,
     onRunQuery: PropTypes.func,
+    editorTheme: PropTypes.string,
   }
 
   constructor(props) {
@@ -57,14 +61,16 @@ export class QueryEditor extends React.Component {
     require('codemirror/keymap/sublime');
     require('codemirror-graphql/hint');
     require('codemirror-graphql/lint');
+    require('codemirror-graphql/info');
+    require('codemirror-graphql/jump');
     require('codemirror-graphql/mode');
 
-    this.editor = CodeMirror(ReactDOM.findDOMNode(this), {
+    this.editor = CodeMirror(this._node, {
       value: this.props.value || '',
       lineNumbers: true,
       tabSize: 2,
       mode: 'graphql',
-      theme: 'graphiql',
+      theme: this.props.editorTheme || 'graphiql',
       keyMap: 'sublime',
       autoCloseBrackets: true,
       matchBrackets: true,
@@ -79,6 +85,15 @@ export class QueryEditor extends React.Component {
         schema: this.props.schema,
         closeOnUnfocus: false,
         completeSingle: false,
+      },
+      info: {
+        schema: this.props.schema,
+        renderDescription: text => marked(text, { sanitize: true }),
+        onClick: reference => this.props.onClickReference(reference),
+      },
+      jump: {
+        schema: this.props.schema,
+        onClick: reference => this.props.onClickReference(reference),
       },
       gutters: [ 'CodeMirror-linenumbers', 'CodeMirror-foldgutter' ],
       extraKeys: {
@@ -121,6 +136,8 @@ export class QueryEditor extends React.Component {
     if (this.props.schema !== prevProps.schema) {
       this.editor.options.lint.schema = this.props.schema;
       this.editor.options.hintOptions.schema = this.props.schema;
+      this.editor.options.info.schema = this.props.schema;
+      this.editor.options.jump.schema = this.props.schema;
       CodeMirror.signal(this.editor, 'change', this.editor);
     }
     if (this.props.value !== prevProps.value &&
@@ -139,7 +156,12 @@ export class QueryEditor extends React.Component {
   }
 
   render() {
-    return <div className="query-editor" />;
+    return (
+      <div
+        className="query-editor"
+        ref={node => { this._node = node; }}
+      />
+    );
   }
 
   /**
@@ -150,15 +172,15 @@ export class QueryEditor extends React.Component {
     return this.editor;
   }
 
+  /**
+   * Public API for retrieving the DOM client height for this component.
+   */
+  getClientHeight() {
+    return this._node && this._node.clientHeight;
+  }
+
   _onKeyUp = (cm, event) => {
-    const code = event.keyCode;
-    if (
-      (code >= 65 && code <= 90) || // letters
-      (!event.shiftKey && code >= 48 && code <= 57) || // numbers
-      (event.shiftKey && code === 189) || // underscore
-      (event.shiftKey && code === 50) || // @
-      (event.shiftKey && code === 57) // (
-    ) {
+    if (AUTO_COMPLETE_AFTER_KEY.test(event.key)) {
       this.editor.execCommand('autocomplete');
     }
   }

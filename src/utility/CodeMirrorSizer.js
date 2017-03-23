@@ -1,13 +1,10 @@
 /**
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the license found in the
- *  LICENSE-examples file in the root directory of this source tree.
+ *  LICENSE file in the root directory of this source tree.
  */
-
-import ReactDOM from 'react-dom';
-
 
 /**
  * When a containing DOM node's height has been altered, trigger a resize of
@@ -20,7 +17,7 @@ export default class CodeMirrorSizer {
 
   updateSizes(components) {
     components.forEach((component, i) => {
-      const size = ReactDOM.findDOMNode(component).clientHeight;
+      const size = component.getClientHeight();
       if (i <= this.sizes.length && size !== this.sizes[i]) {
         component.getCodeMirror().setSize();
       }

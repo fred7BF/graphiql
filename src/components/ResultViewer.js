@@ -1,14 +1,12 @@
 /**
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the license found in the
- *  LICENSE-examples file in the root directory of this source tree.
+ *  LICENSE file in the root directory of this source tree.
  */
 
 import React, { PropTypes } from 'react';
-import ReactDOM from 'react-dom';
-
 
 /**
  * ResultViewer
@@ -22,7 +20,8 @@ import ReactDOM from 'react-dom';
  */
 export class ResultViewer extends React.Component {
   static propTypes = {
-    value: PropTypes.string
+    value: PropTypes.string,
+    editorTheme: PropTypes.string,
   }
 
   componentDidMount() {
@@ -31,14 +30,16 @@ export class ResultViewer extends React.Component {
     const CodeMirror = require('codemirror');
     require('codemirror/addon/fold/foldgutter');
     require('codemirror/addon/fold/brace-fold');
+    require('codemirror/addon/dialog/dialog');
+    require('codemirror/addon/search/search');
     require('codemirror/keymap/sublime');
     require('codemirror-graphql/results/mode');
 
-    this.viewer = CodeMirror(ReactDOM.findDOMNode(this), {
+    this.viewer = CodeMirror(this._node, {
       lineWrapping: true,
       value: this.props.value || '',
       readOnly: true,
-      theme: 'graphiql',
+      theme: this.props.editorTheme || 'graphiql',
       mode: 'graphql-results',
       keyMap: 'sublime',
       foldGutter: {
@@ -68,7 +69,12 @@ export class ResultViewer extends React.Component {
   }
 
   render() {
-    return <div className="result-window" />;
+    return (
+      <div
+        className="result-window"
+        ref={node => { this._node = node; }}
+      />
+    );
   }
 
   /**
@@ -77,5 +83,12 @@ export class ResultViewer extends React.Component {
    */
   getCodeMirror() {
     return this.viewer;
+  }
+
+  /**
+   * Public API for retrieving the DOM client height for this component.
+   */
+  getClientHeight() {
+    return this._node && this._node.clientHeight;
   }
 }
