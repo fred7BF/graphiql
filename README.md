@@ -1,7 +1,8 @@
 GraphsiQL
 ========
 
-*/ˈɡrafsək(ə)l/* A custom version of GraphiQL for [Join Monster](https://github.com/stems/join-monster). [Try the live demo](http://graphql-swapi.parseapp.com/).
+*/ˈɡrafsək(ə)l/* A custom version of GraphiQL for [Join Monster](https://github.com/stems/join-monster).
+[Try the live demo](https://join-monster.herokuapp.com/graphql).
 
 Requires [koa-custom-graphiql](https://github.com/stems/koa-custom-graphiql) to serve.
 ![graphsiql](example/graphsiql.png)
