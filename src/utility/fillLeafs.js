@@ -126,7 +126,8 @@ function defaultGetDefaultFieldNames(type) {
   const leafFieldNames = [];
   Object.keys(fields).forEach(fieldName => {
     const field = fields[fieldName];
-    if (isLeafType(field.type)) {
+    const fieldType = field.type.ofType || field.type;
+    if (isLeafType(fieldType)) {
       // print it commented out if it has required arguments
       const hasRequiredArgs = field.args.find(arg =>
         arg.type.constructor.name === 'GraphQLNonNull'
