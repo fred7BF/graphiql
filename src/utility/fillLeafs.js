@@ -15,6 +15,7 @@ import {
   visit,
 } from 'graphql';
 
+import { getAutocompleteSuggestions } from 'graphql-language-service-interface';
 
 /**
  * Given a document string which may not be valid due to terminal fields not
@@ -63,6 +64,37 @@ export function fillLeafs(schema, docString, getDefaultFieldNames) {
   });
 
   // Apply the insertions, but also return the insertions metadata.
+  return {
+    insertions,
+    result: withInsertions(docString, insertions),
+  };
+}
+
+export function fillChildren(schema, editor) {
+  const insertions = [];
+
+  const docString = editor.getValue();
+
+  if (!schema) {
+    return { insertions, result: docString };
+  }
+
+  const cur = editor.getCursor();
+  const token = editor.getTokenAt(cur);
+  const rawResults = getAutocompleteSuggestions(
+    schema,
+    docString,
+    cur,
+    token,
+  );
+  const index = editor.indexFromPos(cur);
+  const fieldNames = rawResults
+    .map(res => res.label)
+    .join('\n' + getIndentation(docString, index));
+  insertions.push({
+    index,
+    string: fieldNames
+  });
   return {
     insertions,
     result: withInsertions(docString, insertions),

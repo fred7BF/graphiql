@@ -11,6 +11,7 @@ import { GraphQLSchema } from 'graphql';
 import marked from 'marked';
 
 import onHasCompletion from '../utility/onHasCompletion';
+import { fillChildren } from '../utility/fillLeafs';
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
 
@@ -118,6 +119,41 @@ export class QueryEditor extends React.Component {
         'Ctrl-Right': 'goSubwordRight',
         'Alt-Left': 'goGroupLeft',
         'Alt-Right': 'goGroupRight',
+        'Alt-F': () => {
+          const {
+            insertions,
+            result
+          } = fillChildren(this.props.schema, this.editor);
+          if (insertions && insertions.length > 0) {
+            const editor = this.editor;
+            editor.operation(() => {
+              const cursor = editor.getCursor();
+              const cursorIndex = editor.indexFromPos(cursor);
+              editor.setValue(result);
+              let added = 0;
+              const markers = insertions
+              .map(({ index, string }) => editor.markText(
+                editor.posFromIndex(index + added),
+                editor.posFromIndex(index + (added += string.length)),
+                {
+                  className: 'autoInsertedLeaf',
+                  clearOnEnter: true,
+                  title: 'Automatically added leaf fields'
+                }
+              ));
+              setTimeout(() => markers.forEach(marker => marker.clear()), 7000);
+              let newCursorIndex = cursorIndex;
+              insertions.forEach(({ index, string }) => {
+                if (index < cursorIndex) {
+                  newCursorIndex += string.length;
+                }
+              });
+              editor.setCursor(editor.posFromIndex(newCursorIndex));
+            });
+          }
+
+          return result;
+        }
       }
     });
 
