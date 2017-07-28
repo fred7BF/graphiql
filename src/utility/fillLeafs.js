@@ -125,8 +125,17 @@ function defaultGetDefaultFieldNames(type) {
   // Include all leaf-type fields.
   const leafFieldNames = [];
   Object.keys(fields).forEach(fieldName => {
-    if (isLeafType(fields[fieldName].type)) {
-      leafFieldNames.push(fieldName);
+    const field = fields[fieldName];
+    if (isLeafType(field.type)) {
+      // print it commented out if it has required arguments
+      const hasRequiredArgs = field.args.find(arg =>
+        arg.type.constructor.name === 'GraphQLNonNull'
+      );
+      if (hasRequiredArgs) {
+        leafFieldNames.push('# ' + fieldName);
+      } else {
+        leafFieldNames.push(fieldName);
+      }
     }
   });
   return leafFieldNames;
