@@ -112,11 +112,6 @@ function defaultGetDefaultFieldNames(type) {
 
   const fields = type.getFields();
 
-  // Is there an `id` field?
-  if (fields['id']) {
-    return [ 'id' ];
-  }
-
   // Is there an `edges` field?
   if (fields['edges']) {
     return [ 'edges' ];
