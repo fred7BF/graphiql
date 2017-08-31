@@ -1,19 +1,12 @@
 {
-<<<<<<< HEAD
   "name": "graphsiql",
-  "version": "0.0.10",
+  "version": "0.1.0",
   "description": "An graphical interactive in-browser GraphQL IDE with an extra window for showing your SQL query.",
-  "homepage": "https://github.com/acarl005/graphsiql",
-=======
-  "name": "graphiql",
-  "version": "0.11.3",
-  "description": "An graphical interactive in-browser GraphQL IDE.",
   "contributors": [
     "Hyohyeon Jeong <asiandrummer@fb.com>",
     "Lee Byron <lee@leebyron.com> (http://leebyron.com/)"
   ],
-  "homepage": "https://github.com/graphql/graphiql",
->>>>>>> 476aa2d8380e3d3d83f63ae7fda4347fb8b52e1a
+  "homepage": "https://github.com/acarl005/graphsiql",
   "bugs": {
     "url": "https://github.com/acarl005/graphsiql/issues"
   },
