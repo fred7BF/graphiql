@@ -6,7 +6,9 @@
  *  LICENSE file in the root directory of this source tree.
  */
 
-import React, { PropTypes } from 'react';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import PropTypes from 'prop-types';
 
 /**
  * ResultViewer
@@ -22,6 +24,10 @@ export class ResultViewer extends React.Component {
   static propTypes = {
     value: PropTypes.string,
     editorTheme: PropTypes.string,
+    ResultsTooltip: PropTypes.any,
+  };
+  constructor() {
+    super();
   }
 
   componentDidMount() {
@@ -35,6 +41,20 @@ export class ResultViewer extends React.Component {
     require('codemirror/keymap/sublime');
     require('codemirror-graphql/results/mode');
 
+    if (this.props.ResultsTooltip) {
+      require('codemirror-graphql/utils/info-addon');
+      const tooltipDiv = document.createElement('div');
+      CodeMirror.registerHelper(
+        'info',
+        'graphql-results',
+        (token, options, cm, pos) => {
+          const Tooltip = this.props.ResultsTooltip;
+          ReactDOM.render(<Tooltip pos={pos} />, tooltipDiv);
+          return tooltipDiv;
+        },
+      );
+    }
+
     this.viewer = CodeMirror(this._node, {
       lineWrapping: true,
       value: this.props.value || '',
@@ -43,16 +63,17 @@ export class ResultViewer extends React.Component {
       mode: 'graphql-results',
       keyMap: 'sublime',
       foldGutter: {
-        minFoldSize: 4
+        minFoldSize: 4,
       },
-      gutters: [ 'CodeMirror-foldgutter' ],
+      gutters: ['CodeMirror-foldgutter'],
+      info: Boolean(this.props.ResultsTooltip),
       extraKeys: {
         // Editor improvements
         'Ctrl-Left': 'goSubwordLeft',
         'Ctrl-Right': 'goSubwordRight',
         'Alt-Left': 'goGroupLeft',
         'Alt-Right': 'goGroupRight',
-      }
+      },
     });
   }
 
@@ -72,7 +93,9 @@ export class ResultViewer extends React.Component {
     return (
       <div
         className="result-window"
-        ref={node => { this._node = node; }}
+        ref={node => {
+          this._node = node;
+        }}
       />
     );
   }

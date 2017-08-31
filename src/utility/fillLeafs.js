@@ -56,11 +56,11 @@ export function fillLeafs(schema, docString, getDefaultFieldNames) {
           const indent = getIndentation(docString, node.loc.start);
           insertions.push({
             index: node.loc.end,
-            string: ' ' + print(selectionSet).replace(/\n/g, '\n' + indent)
+            string: ' ' + print(selectionSet).replace(/\n/g, '\n' + indent),
           });
         }
       }
-    }
+    },
   });
 
   // Apply the insertions, but also return the insertions metadata.
@@ -114,12 +114,12 @@ function defaultGetDefaultFieldNames(type) {
 
   // Is there an `edges` field?
   if (fields['edges']) {
-    return [ 'edges' ];
+    return ['edges'];
   }
 
   // Is there an `node` field?
   if (fields['node']) {
-    return [ 'node' ];
+    return ['node'];
   }
 
   // Include all leaf-type fields.
@@ -171,11 +171,11 @@ function buildSelectionSet(type, getDefaultFieldNames) {
         kind: 'Field',
         name: {
           kind: 'Name',
-          value: fieldName
+          value: fieldName,
         },
-        selectionSet: buildSelectionSet(fieldType, getDefaultFieldNames)
+        selectionSet: buildSelectionSet(fieldType, getDefaultFieldNames),
       };
-    })
+    }),
   };
 }
 

@@ -6,7 +6,8 @@
  *  LICENSE file in the root directory of this source tree.
  */
 
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { astFromValue, print } from 'graphql';
 import TypeLink from './TypeLink';
 
@@ -16,14 +17,14 @@ export default function Argument({ arg, onClickType, showDefaultValue }) {
       <span className="arg-name">{arg.name}</span>
       {': '}
       <TypeLink type={arg.type} onClick={onClickType} />
-      {arg.defaultValue !== undefined && showDefaultValue !== false &&
+      {arg.defaultValue !== undefined &&
+        showDefaultValue !== false &&
         <span>
           {' = '}
           <span className="arg-default-value">
             {print(astFromValue(arg.defaultValue, arg.type))}
           </span>
-        </span>
-      }
+        </span>}
     </span>
   );
 }
