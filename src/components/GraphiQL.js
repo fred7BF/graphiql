@@ -634,10 +634,14 @@ export class GraphiQL extends React.Component {
         operationName,
         result => {
           if (queryID === this._editorQueryID) {
+            const resultData = {
+              data: result.data,
+              errors: result.errors
+            }
             this.setState({
               isWaitingForResponse: false,
-              response: JSON.stringify(result, null, 2),
-              sql: result._headers && result._headers['x-sql-preview']
+              response: JSON.stringify(resultData, null, 2),
+              sql: result.sql || (result._headers && result._headers['x-sql-preview'])
             });
           }
         },
