@@ -42,7 +42,7 @@ router.post('/graphql', graphqlHTTP({
 
 app.use(router.routes())
 // serve the custom build of GraphiQL
-app.use(koaStatic(path.join(__dirname, '../node_modules/graphsiql')))
+app.use(koaStatic(path.resolve(require.resolve('graphsiql'), '..', '..')))
 
 app.listen(3000, () => console.log('server listening at http://localhost:3000/graphql'))
 ```
