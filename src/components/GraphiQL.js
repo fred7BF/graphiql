@@ -641,7 +641,7 @@ export class GraphiQL extends React.Component {
             this.setState({
               isWaitingForResponse: false,
               response: JSON.stringify(resultData, null, 2),
-              sql: result.sql || (result._headers && result._headers['x-sql-preview'])
+              sql: (result.extensions && result.extensions.sql) || result.sql || (result._headers && result._headers['x-sql-preview'])
             });
           }
         },

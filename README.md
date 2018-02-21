@@ -4,7 +4,7 @@ GraphsiQL
 */ˈɡrafsək(ə)l/* A custom version of GraphiQL for [Join Monster](https://github.com/stems/join-monster).
 [Try the live demo](https://join-monster.herokuapp.com/graphql).
 
-Requires [koa-custom-graphiql](https://github.com/stems/koa-custom-graphiql) to serve.
+To serve it, I suggest using [koa-custom-graphiql](https://github.com/stems/koa-custom-graphiql).
 ![graphsiql](example/graphsiql.png)
 
 
