@@ -74,9 +74,10 @@ export class GraphiQL extends React.Component {
 *     body: JSON.stringify(graphQLParams),
 *   }).then(response => response.json());
 * }
+* 
+* 
+* ReactDOM.render(<GraphiQL fetcher={graphQLFetcher} />, document.body);
 **/
-
-ReactDOM.render(<GraphiQL fetcher={graphQLFetcher} />, document.body);
 
   constructor(props) {
     super(props);
