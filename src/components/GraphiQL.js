@@ -96,7 +96,49 @@ export class GraphiQL extends React.Component {
       : this._storage.get('query') !== null
         ? this._storage.get('query')
         : props.defaultQuery !== undefined ? props.defaultQuery : defaultQuery;
-
+    
+// export default function getQueryFacts(schema, documentStr) {
+//     if (!documentStr) {
+//       return;
+//     }
+  
+//     let documentAST;
+//     try {
+//       documentAST = parse(documentStr);
+//     } catch (e) {
+//       return;
+//     }
+  
+//     const variableToType = schema ? collectVariables(schema, documentAST) : null;
+  
+//     // Collect operations by their names.
+//     const operations = [];
+//     documentAST.definitions.forEach(def => {
+//       if (def.kind === 'OperationDefinition') {
+//         operations.push(def);
+//       }
+//     });
+  
+//     return { variableToType, operations };
+//   }
+    
+// export function collectVariables(schema, documentAST) {
+//     const variableToType = Object.create(null);
+//     documentAST.definitions.forEach(definition => {
+//       if (definition.kind === 'OperationDefinition') {
+//         const variableDefinitions = definition.variableDefinitions;
+//         if (variableDefinitions) {
+//           variableDefinitions.forEach(({ variable, type }) => {
+//             const inputType = typeFromAST(schema, type);
+//             if (inputType) {
+//               variableToType[variable.name.value] = inputType;
+//             }
+//           });
+//         }
+//       }
+//     });
+//     return variableToType;
+//   }    
     // Get the initial query facts.
     const queryFacts = getQueryFacts(props.schema, query);
 
