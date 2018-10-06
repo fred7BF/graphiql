@@ -71,6 +71,7 @@ export class GraphiQL extends React.Component {
     super(props);
 
     // Ensure props are correct
+    // why? fetcher: PropTypes.func.isRequired
     if (typeof props.fetcher !== 'function') {
       throw new TypeError('GraphiQL requires a fetcher function.');
     }
@@ -86,6 +87,48 @@ export class GraphiQL extends React.Component {
         : props.defaultQuery !== undefined ? props.defaultQuery : defaultQuery;
 
     // Get the initial query facts.
+// export default function getQueryFacts(schema, documentStr:query) {
+//     if (!documentStr) {
+//       return;
+//     }
+  
+//     let documentAST;
+//     try {
+//       documentAST = parse(documentStr);
+//     } catch (e) {
+//       return;
+//     }
+  
+//     const variableToType = schema ? collectVariables(schema, documentAST) : null;
+  
+//     // Collect operations by their names.
+//     const operations = [];
+//     documentAST.definitions.forEach(def => {
+//       if (def.kind === 'OperationDefinition') {
+//         operations.push(def);
+//       }
+//     });
+//     return { variableToType, operations };
+//   }
+    
+//   export function collectVariables(schema, documentAST) {
+//     const variableToType = Object.create(null);
+//     documentAST.definitions.forEach(definition => {
+//       if (definition.kind === 'OperationDefinition') {
+//         const variableDefinitions = definition.variableDefinitions;
+//         if (variableDefinitions) {
+//           variableDefinitions.forEach(({ variable, type }) => {
+//             const inputType = typeFromAST(schema, type);
+//             if (inputType) {
+//               variableToType[variable.name.value] = inputType;
+//             }
+//           });
+//         }
+//       }
+//     });
+//     return variableToType;
+//   }
+    
     const queryFacts = getQueryFacts(props.schema, query);
 
     // Determine the initial variables to display.
@@ -1004,7 +1047,8 @@ GraphiQL.Footer = function GraphiQLFooter(props) {
   );
 };
 
-const defaultQuery = `# Welcome to GraphiQL
+const 
+= `# Welcome to GraphiQL
 #
 # GraphiQL is an in-browser tool for writing, validating, and
 # testing GraphQL queries.
